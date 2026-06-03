@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mareias Villas — Meta Ads Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0f1117;--card:#1a1d27;--card2:#222636;--border:#2e3250;
+  --accent:#4f6ef7;--accent2:#7c3aed;--green:#22c55e;
+  --yellow:#f59e0b;--red:#ef4444;--cyan:#06b6d4;
+  --text:#e2e8f0;--muted:#8892b0;--white:#ffffff;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
+
+/* HEADER */
+header{
+  background:linear-gradient(135deg,#1a1d27,#222636);
+  border-bottom:1px solid var(--border);
+  padding:14px 24px;display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:10px;
+  position:sticky;top:0;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-icon{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+.logo-text h1{font-size:17px;font-weight:700;color:var(--white);}
+.logo-text p{font-size:11px;color:var(--muted);}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+#last-update{font-size:11px;color:var(--muted);}
+.status-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--green);
+  display:inline-block;box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.btn{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;color:#fff;padding:8px 16px;border-radius:8px;
+  cursor:pointer;font-size:13px;font-weight:600;
+  display:flex;align-items:center;gap:6px;transition:opacity .2s;
+}
+.btn:hover{opacity:.85;}
+.btn.loading .ico{display:none;}
+.btn.loading .spin{display:inline;animation:spin .7s linear infinite;}
+.btn .spin{display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TABS */
+.tabs{
+  display:flex;gap:2px;padding:16px 24px 0;
+  border-bottom:1px solid var(--border);
+  overflow-x:auto;background:var(--card);
+}
+.tab{
+  padding:10px 22px;border-radius:8px 8px 0 0;
+  cursor:pointer;font-size:13px;font-weight:600;
+  color:var(--muted);background:transparent;border:none;
+  border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;
+}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(79,110,247,.08);}
+
+/* MAIN */
+main{padding:24px;max-width:1700px;margin:0 auto;}
+.page{display:none;animation:fadeIn .3s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;margin-bottom:24px;}
+.kpi{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:18px 20px;
+  transition:transform .2s,box-shadow .2s;cursor:default;
+}
+.kpi:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,.35);}
+.kpi-icon{font-size:22px;margin-bottom:8px;}
+.kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+.kpi-value{font-size:24px;font-weight:800;color:var(--white);line-height:1;}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+.kpi-bar{height:3px;border-radius:2px;margin-top:12px;background:var(--border);}
+.kpi-bar-fill{height:100%;border-radius:2px;}
+
+/* SECTION TITLE */
+.section-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:18px;margin-bottom:24px;}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.chart-card h3{font-size:11px;color:var(--muted);margin-bottom:14px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.chart-wrap{position:relative;height:230px;}
+
+/* TABLE */
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px;}
+.table-header{
+  padding:14px 18px;display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:8px;
+  border-bottom:1px solid var(--border);
+}
+.table-header h3{font-size:13px;font-weight:700;color:var(--white);}
+.table-search{
+  background:var(--card2);border:1px solid var(--border);
+  color:var(--text);padding:6px 12px;border-radius:8px;
+  font-size:12px;outline:none;width:200px;
+}
+.table-search:focus{border-color:var(--accent);}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead th{
+  background:var(--card2);padding:9px 14px;
+  text-align:left;color:var(--muted);font-weight:600;
+  font-size:10px;text-transform:uppercase;letter-spacing:.5px;
+  white-space:nowrap;border-bottom:1px solid var(--border);
+  cursor:pointer;user-select:none;
+}
+thead th:hover{color:var(--accent);}
+tbody tr{border-bottom:1px solid rgba(46,50,80,.4);transition:background .12s;}
+tbody tr:hover{background:rgba(79,110,247,.05);}
+tbody td{padding:9px 14px;white-space:nowrap;color:var(--text);}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.b-blue{background:rgba(79,110,247,.2);color:#818cf8;}
+.b-green{background:rgba(34,197,94,.2);color:#4ade80;}
+.b-yellow{background:rgba(245,158,11,.2);color:#fbbf24;}
+.b-red{background:rgba(239,68,68,.2);color:#f87171;}
+.b-cyan{background:rgba(6,182,212,.2);color:#22d3ee;}
+.b-purple{background:rgba(124,58,237,.2);color:#a78bfa;}
+
+/* CRIATIVOS */
+.subtabs{display:flex;gap:8px;margin-bottom:18px;}
+.subtab{
+  padding:7px 16px;border-radius:8px;cursor:pointer;font-size:12px;
+  font-weight:600;color:var(--muted);background:var(--card2);
+  border:1px solid var(--border);transition:all .2s;
+}
+.subtab.active{background:rgba(79,110,247,.15);color:var(--accent);border-color:var(--accent);}
+.subpage{display:none;}
+.subpage.active{display:block;}
+.cria-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:24px;}
+.cria-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;
+  transition:transform .2s,box-shadow .2s;
+}
+.cria-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.45);}
+.cria-thumb{
+  width:100%;height:160px;background:var(--card2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:42px;color:var(--muted);
+  border-bottom:1px solid var(--border);overflow:hidden;
+}
+.cria-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.cria-body{padding:12px;}
+.cria-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;}
+.cria-name{font-size:12px;font-weight:700;color:var(--white);margin-bottom:3px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cria-file{font-size:10px;color:var(--muted);margin-bottom:10px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cria-metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.cria-metric{background:var(--card2);border-radius:8px;padding:7px 9px;}
+.cria-metric .ml{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+.cria-metric .mv{font-size:14px;font-weight:700;color:var(--white);}
+.cria-footer{margin-top:10px;display:flex;justify-content:space-between;align-items:center;}
+
+/* LOCALIZAÇÃO — RANKING BARS */
+.loc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-bottom:24px;}
+.rank-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.rank-card h3{font-size:11px;color:var(--muted);margin-bottom:16px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.rank-item{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.rank-pos{
+  width:22px;height:22px;border-radius:6px;
+  background:rgba(79,110,247,.15);color:var(--accent);
+  font-size:10px;font-weight:800;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;
+}
+.rank-pos.gold{background:rgba(245,158,11,.2);color:#fbbf24;}
+.rank-pos.silver{background:rgba(148,163,184,.15);color:#94a3b8;}
+.rank-pos.bronze{background:rgba(180,83,9,.2);color:#fb923c;}
+.rank-info{flex:1;min-width:0;}
+.rank-label{font-size:11px;color:var(--text);font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px;}
+.rank-bar-bg{width:100%;background:var(--border);border-radius:4px;height:6px;}
+.rank-bar-fill{height:100%;border-radius:4px;transition:width .6s ease;}
+.rank-val{width:75px;text-align:right;font-size:11px;font-weight:700;color:var(--white);flex-shrink:0;}
+
+/* LOADING */
+#loading{
+  position:fixed;inset:0;background:rgba(15,17,23,.92);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;gap:16px;
+}
+#loading .sp{
+  width:50px;height:50px;border:4px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;
+}
+#loading p{color:var(--muted);font-size:14px;}
+#loading.hidden{display:none;}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .charts-grid{grid-template-columns:1fr;}
+  .loc-grid{grid-template-columns:1fr;}
+}
+@media(max-width:600px){
+  header{padding:10px 14px;}
+  main{padding:14px;}
+  .tabs{padding:10px 14px 0;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .kpi-value{font-size:20px;}
+  .cria-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+  .table-search{width:100%;}
+}
+@media(max-width:360px){.kpi-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="sp"></div><p>Carregando dados do Meta Ads...</p></div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🌊</div>
+    <div class="logo-text">
+      <h1>Mareias Villas</h1>
+      <p>Meta Ads Dashboard</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="status-dot"></span>
+    <span id="last-update">—</span>
+    <button class="btn" onclick="loadAll()">
+      <span class="ico">↻</span><span class="spin">⟳</span> Atualizar
+    </button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('perf',this)">📊 Performance</button>
+  <button class="tab" onclick="switchTab('cria',this)">🎬 Criativos</button>
+  <button class="tab" onclick="switchTab('loca',this)">🗺️ Localização</button>
+</div>
+
+<main>
+
+<!-- ══════════ PERFORMANCE ══════════ -->
+<div class="page active" id="page-perf">
+  <div class="kpi-grid" id="kpi-perf"></div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>💰 Gasto por Dia (R$)</h3>
+      <div class="chart-wrap"><canvas id="cSpend"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>👁️ Impressões por Dia</h3>
+      <div class="chart-wrap"><canvas id="cImpr"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>🖱️ Clicks (All) por Dia</h3>
+      <div class="chart-wrap"><canvas id="cClicks"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>💬 Conversas Iniciadas por Dia</h3>
+      <div class="chart-wrap"><canvas id="cMsg"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>📺 Funil de Retenção de Vídeo</h3>
+      <div class="chart-wrap"><canvas id="cVideo"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>📊 CTR (%) por Data</h3>
+      <div class="chart-wrap"><canvas id="cCTR"></canvas></div>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-header">
+      <h3>📋 Detalhamento por Data</h3>
+      <input class="table-search" id="sp1" placeholder="Buscar campanha, data..." oninput="filterTbl('t1','sp1')"/>
+    </div>
+    <div class="table-wrap">
+      <table id="t1">
+        <thead><tr>
+          <th onclick="sortTbl('t1',0)">Data ↕</th>
+          <th onclick="sortTbl('t1',1)">Campanha ↕</th>
+          <th onclick="sortTbl('t1',2)">Ad Set ↕</th>
+          <th onclick="sortTbl('t1',3)">Impressões ↕</th>
+          <th onclick="sortTbl('t1',4)">Reach ↕</th>
+          <th onclick="sortTbl('t1',5)">Freq. ↕</th>
+          <th onclick="sortTbl('t1',6)">Gasto ↕</th>
+          <th onclick="sortTbl('t1',7)">Msg Conv. ↕</th>
+          <th onclick="sortTbl('t1',8)">Clicks (All) ↕</th>
+          <th onclick="sortTbl('t1',9)">CTR ↕</th>
+          <th onclick="sortTbl('t1',10)">CPC ↕</th>
+          <th onclick="sortTbl('t1',11)">CPM ↕</th>
+          <th onclick="sortTbl('t1',12)">V25% ↕</th>
+          <th onclick="sortTbl('t1',13)">V50% ↕</th>
+          <th onclick="sortTbl('t1',14)">V75% ↕</th>
+          <th onclick="sortTbl('t1',15)">V100% ↕</th>
+        </tr></thead>
+        <tbody id="tb1"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ CRIATIVOS ══════════ -->
+<div class="page" id="page-cria">
+  <div class="kpi-grid" id="kpi-cria"></div>
+  <div class="subtabs">
+    <button class="subtab active" onclick="switchSub('videos',this)">🎬 Vídeos</button>
+    <button class="subtab" onclick="switchSub('imagens',this)">🖼️ Imagens</button>
+    <button class="subtab" onclick="switchSub('todos',this)">📊 Comparativo</button>
+  </div>
+
+  <div class="subpage active" id="sub-videos">
+    <div class="section-title"><span>🎬</span> Criativos em Vídeo</div>
+    <div class="cria-grid" id="grid-videos"></div>
+    <div class="table-card">
+      <div class="table-header">
+        <h3>📋 Tabela — Vídeos</h3>
+        <input class="table-search" id="sp2v" placeholder="Buscar..." oninput="filterTbl('t2v','sp2v')"/>
+      </div>
+      <div class="table-wrap">
+        <table id="t2v">
+          <thead><tr>
+            <th onclick="sortTbl('t2v',0)">Ad Name ↕</th>
+            <th onclick="sortTbl('t2v',1)">Vídeo ↕</th>
+            <th onclick="sortTbl('t2v',2)">Impressões ↕</th>
+            <th onclick="sortTbl('t2v',3)">Gasto ↕</th>
+            <th onclick="sortTbl('t2v',4)">Msg Conv. ↕</th>
+            <th onclick="sortTbl('t2v',5)">Clicks ↕</th>
+            <th onclick="sortTbl('t2v',6)">CTR ↕</th>
+          </tr></thead>
+          <tbody id="tb2v"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="subpage" id="sub-imagens">
+    <div class="section-title"><span>🖼️</span> Criativos em Imagem</div>
+    <div class="cria-grid" id="grid-imagens"></div>
+    <div class="table-card">
+      <div class="table-header">
+        <h3>📋 Tabela — Imagens</h3>
+        <input class="table-search" id="sp2i" placeholder="Buscar..." oninput="filterTbl('t2i','sp2i')"/>
+      </div>
+      <div class="table-wrap">
+        <table id="t2i">
+          <thead><tr>
+            <th onclick="sortTbl('t2i',0)">Ad Name ↕</th>
+            <th onclick="sortTbl('t2i',1)">Imagem ↕</th>
+            <th onclick="sortTbl('t2i',2)">Impressões ↕</th>
+            <th onclick="sortTbl('t2i',3)">Gasto ↕</th>
+            <th onclick="sortTbl('t2i',4)">Msg Conv. ↕</th>
+            <th onclick="sortTbl('t2i',5)">Clicks ↕</th>
+            <th onclick="sortTbl('t2i',6)">CTR ↕</th>
+          </tr></thead>
+          <tbody id="tb2i"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="subpage" id="sub-todos">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>🏆 Top Criativos por Clicks (All)</h3>
+        <div class="chart-wrap"><canvas id="cCriaClicks"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>💰 Top Criativos por Gasto</h3>
+        <div class="chart-wrap"><canvas id="cCriaSpend"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>💬 Top Criativos por Conversas</h3>
+        <div class="chart-wrap"><canvas id="cCriaMsg"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>📊 CTR % por Criativo</h3>
+        <div class="chart-wrap"><canvas id="cCriaCTR"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ LOCALIZAÇÃO ══════════ -->
+<div class="page" id="page-loca">
+  <div class="kpi-grid" id="kpi-loca"></div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>💰 Gasto por Estado — Decrescente</h3>
+      <div class="chart-wrap"><canvas id="cLocSpend"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>👁️ Impressões por Estado — Decrescente</h3>
+      <div class="chart-wrap"><canvas id="cLocImpr"></canvas></div>
+    </div>
+  </div>
+
+  <!-- RANKINGS COM BARRAS COLORIDAS -->
+  <div class="loc-grid">
+    <div class="rank-card">
+      <h3>🏆 Ranking por Impressões</h3>
+      <div id="rankImpr"></div>
+    </div>
+    <div class="rank-card">
+      <h3>💰 Ranking por Gasto</h3>
+      <div id="rankSpend"></div>
+    </div>
+    <div class="rank-card">
+      <h3>🖱️ Ranking por Clicks</h3>
+      <div id="rankClicks"></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">
+      <h3>📋 Detalhamento por Estado</h3>
+      <input class="table-search" id="sp3" placeholder="Buscar estado..." oninput="filterTbl('t3','sp3')"/>
+    </div>
+    <div class="table-wrap">
+      <table id="t3">
+        <thead><tr>
+          <th onclick="sortTbl('t3',0)">Estado ↕</th>
+          <th onclick="sortTbl('t3',1)">Impressões ↕</th>
+          <th onclick="sortTbl('t3',2)">Gasto (R$) ↕</th>
+          <th onclick="sortTbl('t3',3)">Clicks ↕</th>
+          <th onclick="sortTbl('t3',4)">CPC ↕</th>
+          <th onclick="sortTbl('t3',5)">CPM ↕</th>
+          <th onclick="sortTbl('t3',6)">CTR ↕</th>
+        </tr></thead>
+        <tbody id="tb3"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ══════ CONFIG ══════
+const SID  = '1nHuQqaemM8Z431Qvj-fTAnnh4BEt6KdFsVI8HB67nXo';
+const GIDS = {perf:'0', cria:'1959351554', criaImg:'1400239021', loca:'1640282696'};
+const CH   = {};
+const PAL  = ['#4f6ef7','#7c3aed','#22c55e','#f59e0b','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316','#a78bfa'];
+
+function csvUrl(gid){
+  return `https://docs.google.com/spreadsheets/d/${SID}/export?format=csv&gid=${gid}`;
+}
+
+// ══════ CSV PARSER ══════
+function parseCSV(text){
+  const lines=text.trim().split('\n');
+  if(lines.length<2)return[];
+  const hdr=splitCSV(lines[0]);
+  return lines.slice(1).map(l=>{
+    const v=splitCSV(l);const o={};
+    hdr.forEach((h,i)=>o[h.trim()]=(v[i]||'').trim());
+    return o;
+  }).filter(r=>Object.values(r).some(v=>v!==''));
+}
+function splitCSV(line){
+  const r=[];let c='';let q=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){q=!q;}
+    else if(ch===','&&!q){r.push(c);c='';}
+    else c+=ch;
+  }
+  r.push(c);return r;
+}
+
+// ══════ FORMATTERS ══════
+// Converte string pt-BR ou en para número
+function n(v){
+  if(v===null||v===undefined||v==='')return 0;
+  let s=String(v).trim();
+  // Remove espaços, símbolos de moeda
+  s=s.replace(/[R$\s]/g,'');
+  // Detecta formato pt-BR: tem vírgula como decimal (ex: "1.234,56")
+  if(/^-?\d{1,3}(\.\d{3})*(,\d+)?$/.test(s)){
+    s=s.replace(/\./g,'').replace(',','.');
+  } else {
+    // Remove pontos de milhar ambíguos se não tem vírgula decimal clara
+    // Ex: "1.73" já é decimal correto
+    s=s.replace(',','.');
+  }
+  return parseFloat(s)||0;
+}
+function fI(v){return Math.round(n(v)).toLocaleString('pt-BR');}
+function fD(v,d=2){return n(v).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function fR(v){return 'R$ '+fD(v);}
+function fP(v){return fD(v)+'%';}
+function palC(i){return PAL[i%PAL.length];}
+
+// ══════ TABS ══════
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-'+id).classList.add('active');
+}
+function switchSub(id,el){
+  document.querySelectorAll('.subtab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.subpage').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('sub-'+id).classList.add('active');
+}
+
+// ══════ KPI ══════
+function kpi(icon,label,val,sub,color='var(--accent)',pct=60){
+  return `<div class="kpi">
+    <div class="kpi-icon">${icon}</div>
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-value">${val}</div>
+    <div class="kpi-sub">${sub}</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
+  </div>`;
+}
+
+// ══════ CHART ══════
+function mkChart(id,type,labels,datasets,opts={}){
+  if(CH[id]){CH[id].destroy();delete CH[id];}
+  const ctx=document.getElementById(id);if(!ctx)return;
+  CH[id]=new Chart(ctx,{
+    type,
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#8892b0',font:{size:10},boxWidth:12}},
+        tooltip:{mode:'index',intersect:false}
+      },
+      scales:type!=='doughnut'&&type!=='pie'?{
+        x:{ticks:{color:'#8892b0',font:{size:9},maxRotation:50},grid:{color:'rgba(46,50,80,.4)'}},
+        y:{ticks:{color:'#8892b0',font:{size:9}},grid:{color:'rgba(46,50,80,.4)'}}
+      }:{},
+      ...opts
+    }
+  });
+}
+
+// ══════ TABLE HELPERS ══════
+function filterTbl(tId,sId){
+  const q=document.getElementById(sId).value.toLowerCase();
+  document.querySelectorAll('#'+tId+' tbody tr').forEach(tr=>{
+    tr.style.display=tr.innerText.toLowerCase().includes(q)?'':'none';
+  });
+}
+const _sd={};
+function sortTbl(tId,col){
+  const tb=document.querySelector('#'+tId+' tbody');
+  const rows=[...tb.querySelectorAll('tr')];
+  const key=tId+'_'+col;_sd[key]=!_sd[key];
+  rows.sort((a,b)=>{
+    const av=a.cells[col]?.innerText||'';
+    const bv=b.cells[col]?.innerText||'';
+    const an=parseFloat(av.replace(/[^0-9.-]/g,''));
+    const bn=parseFloat(bv.replace(/[^0-9.-]/g,''));
+    if(!isNaN(an)&&!isNaN(bn))return _sd[key]?an-bn:bn-an;
+    return _sd[key]?av.localeCompare(bv,'pt-BR'):bv.localeCompare(av,'pt-BR');
+  });
+  rows.forEach(r=>tb.appendChild(r));
+}
+
+// ══════ RANKING BARS (CORRIGIDO) ══════
+function rankBars(containerId, sorted, fmtFn){
+  // sorted = [{label, value}, ...] já ordenado desc
+  const maxV = sorted.reduce((m,r)=>Math.max(m, r.value), 0) || 1;
+  const posClass = i=> i===0?'gold':i===1?'silver':i===2?'bronze':'';
+  document.getElementById(containerId).innerHTML = sorted.map((r,i)=>{
+    // Garante número puro antes do cálculo
+    const v = typeof r.value === 'number' ? r.value : n(r.value);
+    const pct = Math.max((v / maxV) * 100, 0).toFixed(1);
+    const color = palC(i);
+    return `<div class="rank-item">
+      <div class="rank-pos ${posClass(i)}">${i+1}</div>
+      <div class="rank-info">
+        <div class="rank-label" title="${r.label}">${r.label}</div>
+        <div class="rank-bar-bg">
+          <div class="rank-bar-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+      </div>
+      <div class="rank-val">${fmtFn(v)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════ CRIATIVO CARD ══════
+function criaCard(r, tipo){
+  const thumb  = r['URL Thumbnail']||'';
+  const file   = tipo==='video'?(r['Video']||''):(r['Image']||'');
+  const ctrV   = n(r['CTR (All)']);
+  const bCls   = ctrV>=5?'b-green':ctrV>=3?'b-yellow':'b-blue';
+  const tColor = tipo==='video'?'var(--accent)':'var(--cyan)';
+  const tIcon  = tipo==='video'?'🎬':'🖼️';
+  return `<div class="cria-card">
+    <div class="cria-thumb">
+      ${thumb
+        ? `<img src="${thumb}" alt="${file}" loading="lazy"
+             onerror="this.parentNode.innerHTML='<span style=\'font-size:42px\'>${tIcon}</span>'">`
+        : `<span style="font-size:42px">${tIcon}</span>`}
+    </div>
+    <div class="cria-body">
+      <div class="cria-type" style="color:${tColor}">${tIcon} ${tipo==='video'?'VÍDEO':'IMAGEM'}</div>
+      <div class="cria-name">${r['Ad Name']||'—'}</div>
+      <div class="cria-file" title="${file}">${file||'—'}</div>
+      <div class="cria-metrics">
+        <div class="cria-metric"><div class="ml">Impressões</div><div class="mv">${fI(r['Impressions'])}</div></div>
+        <div class="cria-metric"><div class="ml">Gasto</div><div class="mv" style="font-size:11px">${fR(r['Amount Spent'])}</div></div>
+        <div class="cria-metric"><div class="ml">Msg Conv.</div><div class="mv">${fI(r['Messaging Conversations Started']||0)}</div></div>
+        <div class="cria-metric"><div class="ml">Clicks</div><div class="mv">${fI(r['Clicks (All)'])}</div></div>
+      </div>
+      <div class="cria-footer">
+        <span style="font-size:10px;color:var(--muted)">CTR</span>
+        <span class="badge ${bCls}">${fD(r['CTR (All)'])}%</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ══════ RENDER PERFORMANCE ══════
+function renderPerf(rows){
+  // KPIs — soma por coluna
+  const totImpr  = rows.reduce((s,r)=>s+n(r['Impressions']),0);
+  const totReach = rows.reduce((s,r)=>s+n(r['Reach']),0);
+  const totSpend = rows.reduce((s,r)=>s+n(r['Amount Spent']),0);
+  const totMsg   = rows.reduce((s,r)=>s+n(r['Messaging Conversations Started']),0);
+  const totClk   = rows.reduce((s,r)=>s+n(r['Clicks (All)']),0);
+  const totV25   = rows.reduce((s,r)=>s+n(r['Video Watches at 25%']),0);
+  const totV100  = rows.reduce((s,r)=>s+n(r['Video Watches at 100%']),0);
+  const avgFreq  = rows.length ? rows.reduce((s,r)=>s+n(r['Frequency']),0)/rows.length : 0;
+  const avgCPM   = rows.length ? rows.reduce((s,r)=>s+n(r['CPM (Cost per 1,000 Impressions)']),0)/rows.length : 0;
+  const ctrGeral = totImpr>0 ? totClk/totImpr*100 : 0;
+  const cpcGeral = totClk>0 ? totSpend/totClk : 0;
+
+  document.getElementById('kpi-perf').innerHTML =
+    kpi('👁️','Impressões Totais',   fI(totImpr),  'Total do período','var(--accent)') +
+    kpi('👥','Alcance (Reach)',       fI(totReach), 'Pessoas únicas','var(--accent2)') +
+    kpi('💰','Gasto Total',           fR(totSpend), 'Amount Spent','var(--green)') +
+    kpi('💬','Conversas Iniciadas',   fI(totMsg),   'Messaging Conv.','var(--yellow)') +
+    kpi('🖱️','Clicks (All)',          fI(totClk),   'Total de cliques','var(--cyan)') +
+    kpi('📺','Video Views 25%',       fI(totV25),   'Assistiram ¼ do vídeo','var(--accent2)') +
+    kpi('🎯','Video Views 100%',      fI(totV100),  'Assistiram tudo','var(--green)') +
+    kpi('📊','CTR Geral',             fP(ctrGeral), 'Clicks / Impressões','var(--accent)',Math.min(ctrGeral*10,100)) +
+    kpi('💵','CPC Médio',             fR(cpcGeral), 'Custo por clique','var(--yellow)') +
+    kpi('📡','CPM Médio',             fR(avgCPM),   'Custo por 1.000 imp.','var(--cyan)');
+
+  // Agrupa por DIA (soma linha a linha)
+  const byDay={};
+  rows.forEach(r=>{
+    const d=(r['Day']||r['date_start']||'').trim();
+    if(!d)return;
+    if(!byDay[d]) byDay[d]={spend:0,impr:0,reach:0,clk:0,msg:0,v25:0,v50:0,v75:0,v100:0,ctrSum:0,ctrCnt:0};
+    byDay[d].spend +=n(r['Amount Spent']);
+    byDay[d].impr  +=n(r['Impressions']);
+    byDay[d].reach +=n(r['Reach']);
+    byDay[d].clk   +=n(r['Clicks (All)']);
+    byDay[d].msg   +=n(r['Messaging Conversations Started']);
+    byDay[d].v25   +=n(r['Video Watches at 25%']);
+    byDay[d].v50   +=n(r['Video Watches at 50%']);
+    byDay[d].v75   +=n(r['Video Watches at 75%']);
+    byDay[d].v100  +=n(r['Video Watches at 100%']);
+    const ctr=n(r['CTR (All)']);
+    if(ctr>0){byDay[d].ctrSum+=ctr;byDay[d].ctrCnt++;}
+  });
+  const days=Object.keys(byDay).sort();
+  const dl=days.map(d=>d.slice(5));
+
+  mkChart('cSpend','line',dl,[{
+    label:'Gasto R$',data:days.map(d=>+byDay[d].spend.toFixed(2)),
+    borderColor:PAL[2],backgroundColor:'rgba(34,197,94,.1)',
+    tension:.4,fill:true,pointRadius:3,pointBackgroundColor:PAL[2]
+  }]);
+
+  mkChart('cImpr','bar',dl,[{
+    label:'Impressões',data:days.map(d=>byDay[d].impr),
+    backgroundColor:'rgba(124,58,237,.7)',borderRadius:4
+  }]);
+
+  mkChart('cClicks','line',dl,[{
+    label:'Clicks (All)',data:days.map(d=>byDay[d].clk),
+    borderColor:PAL[0],backgroundColor:'rgba(79,110,247,.1)',
+    tension:.4,fill:true,pointRadius:3,pointBackgroundColor:PAL[0]
+  }]);
+
+  mkChart('cMsg','bar',dl,[{
+    label:'Conversas',data:days.map(d=>byDay[d].msg),
+    backgroundColor:'rgba(245,158,11,.75)',borderRadius:4
+  }]);
+
+  mkChart('cVideo','line',dl,[
+    {label:'25%', data:days.map(d=>byDay[d].v25), borderColor:PAL[0],tension:.4,pointRadius:2,fill:false},
+    {label:'50%', data:days.map(d=>byDay[d].v50), borderColor:PAL[1],tension:.4,pointRadius:2,fill:false},
+    {label:'75%', data:days.map(d=>byDay[d].v75), borderColor:PAL[2],tension:.4,pointRadius:2,fill:false},
+    {label:'100%',data:days.map(d=>byDay[d].v100),borderColor:PAL[3],tension:.4,pointRadius:2,fill:false},
+  ]);
+
+  // CTR médio por dia
+  mkChart('cCTR','line',dl,[{
+    label:'CTR % médio',
+    data:days.map(d=>byDay[d].ctrCnt>0?(byDay[d].ctrSum/byDay[d].ctrCnt).toFixed(2):0),
+    borderColor:PAL[4],backgroundColor:'rgba(239,68,68,.1)',
+    tension:.4,fill:true,pointRadius:3,pointBackgroundColor:PAL[4]
+  }]);
+
+  // Tabela — ordenada por data crescente
+  const sorted=[...rows].sort((a,b)=>(a['Day']||'').localeCompare(b['Day']||''));
+  document.getElementById('tb1').innerHTML=sorted.map(r=>`<tr>
+    <td><b>${r['Day']||''}</b></td>
+    <td><span class="badge b-blue" title="${r['Campaign Name']||''}">${(r['Campaign Name']||'').substring(0,20)}…</span></td>
+    <td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">${(r['Ad Set Name']||'').substring(0,22)}</td>
+    <td>${fI(r['Impressions'])}</td>
+    <td>${fI(r['Reach'])}</td>
+    <td>${fD(r['Frequency'])}</td>
+    <td><span class="badge b-green">${fR(r['Amount Spent'])}</span></td>
+    <td><span class="badge b-yellow">${fI(r['Messaging Conversations Started'])}</span></td>
+    <td>${fI(r['Clicks (All)'])}</td>
+    <td>${fP(r['CTR (All)'])}</td>
+    <td>${fR(r['CPC (All)'])}</td>
+    <td>${fR(r['CPM (Cost per 1,000 Impressions)']||r['CPM']||0)}</td>
+    <td>${fI(r['Video Watches at 25%'])}</td>
+    <td>${fI(r['Video Watches at 50%'])}</td>
+    <td>${fI(r['Video Watches at 75%'])}</td>
+    <td>${fI(r['Video Watches at 100%'])}</td>
+  </tr>`).join('');
+}
+
+// ══════ RENDER CRIATIVOS ══════
+function renderCria(videos, imagens){
+  const all=[
+    ...videos.map(r=>({...r,_t:'video'})),
+    ...imagens.map(r=>({...r,_t:'imagem'}))
+  ];
+  const totImpr  = all.reduce((s,r)=>s+n(r['Impressions']),0);
+  const totSpend = all.reduce((s,r)=>s+n(r['Amount Spent']),0);
+  const totMsg   = all.reduce((s,r)=>s+n(r['Messaging Conversations Started']),0);
+  const totClk   = all.reduce((s,r)=>s+n(r['Clicks (All)']),0);
+  const avgCTR   = all.length?all.reduce((s,r)=>s+n(r['CTR (All)']),0)/all.length:0;
+
+  document.getElementById('kpi-cria').innerHTML =
+    kpi('🎬','Criativos Vídeo',   videos.length,  'Anúncios de vídeo','var(--accent)') +
+    kpi('🖼️','Criativos Imagem',  imagens.length, 'Anúncios de imagem','var(--cyan)') +
+    kpi('👁️','Impressões Totais', fI(totImpr),    'Todos os criativos','var(--accent2)') +
+    kpi('💰','Gasto Total',        fR(totSpend),   'Amount Spent','var(--green)') +
+    kpi('💬','Conversas Iniciadas',fI(totMsg),     'Messaging Conv.','var(--yellow)') +
+    kpi('🖱️','Clicks Totais',      fI(totClk),     'Clicks (All)','var(--cyan)') +
+    kpi('📊','CTR Médio',          fP(avgCTR),     'Click-Through Rate','var(--green)',Math.min(avgCTR*10,100));
+
+  // Vídeos — ordenados por Clicks desc
+  const vids=[...videos].sort((a,b)=>n(b['Clicks (All)'])-n(a['Clicks (All)']));
+  document.getElementById('grid-videos').innerHTML=vids.map(r=>criaCard(r,'video')).join('');
+  document.getElementById('tb2v').innerHTML=vids.map(r=>`<tr>
+    <td><b>${r['Ad Name']||''}</b></td>
+    <td>🎬 ${r['Video']||''}</td>
+    <td>${fI(r['Impressions'])}</td>
+    <td><span class="badge b-green">${fR(r['Amount Spent'])}</span></td>
+    <td><span class="badge b-yellow">${fI(r['Messaging Conversations Started'])}</span></td>
+    <td>${fI(r['Clicks (All)'])}</td>
+    <td><span class="badge ${n(r['CTR (All)'])>=5?'b-green':n(r['CTR (All)'])>=3?'b-yellow':'b-blue'}">${fP(r['CTR (All)'])}</span></td>
+  </tr>`).join('');
+
+  // Imagens — ordenadas por Clicks desc
+  const imgs=[...imagens].sort((a,b)=>n(b['Clicks (All)'])-n(a['Clicks (All)']));
+  document.getElementById('grid-imagens').innerHTML=imgs.map(r=>criaCard(r,'imagem')).join('');
+  document.getElementById('tb2i').innerHTML=imgs.map(r=>`<tr>
+    <td><b>${r['Ad Name']||''}</b></td>
+    <td>🖼️ ${r['Image']||''}</td>
+    <td>${fI(r['Impressions'])}</td>
+    <td><span class="badge b-green">${fR(r['Amount Spent'])}</span></td>
+    <td><span class="badge b-yellow">${fI(r['Messaging Conversations Started'])}</span></td>
+    <td>${fI(r['Clicks (All)'])}</td>
+    <td><span class="badge ${n(r['CTR (All)'])>=5?'b-green':n(r['CTR (All)'])>=3?'b-yellow':'b-blue'}">${fP(r['CTR (All)'])}</span></td>
+  </tr>`).join('');
+
+  // Gráficos comparativos — todos juntos, ordenados cada um pelo seu critério
+  function mkH(id,data,label,key,fmt){
+    const s=[...data].sort((a,b)=>n(b[key])-n(a[key]));
+    mkChart(id,'bar',s.map(r=>(r['Ad Name']||'?')+' ('+(r._t==='video'?'🎬':'🖼️')+')'), [{
+      label,data:s.map(r=>n(r[key])),
+      backgroundColor:s.map((_,i)=>palC(i)),borderRadius:4
+    }],{indexAxis:'y'});
+  }
+  mkH('cCriaClicks',all,'Clicks (All)','Clicks (All)',fI);
+  mkH('cCriaSpend', all,'Gasto R$',    'Amount Spent',fR);
+  mkH('cCriaMsg',   all,'Msg Conv.',   'Messaging Conversations Started',fI);
+  mkH('cCriaCTR',   all,'CTR %',       'CTR (All)',fP);
+}
+
+// ══════ RENDER LOCALIZAÇÃO ══════
+function renderLoca(rows){
+  // Força numérico explicitamente em cada linha
+  const data = rows.map(r=>({
+    region : r['Region']||'',
+    impr   : n(r['Impressions']),
+    spend  : n(r['Amount Spent']),
+    clicks : n(r['Clicks (All)'])
+  }));
+
+  const totImpr  = data.reduce((s,r)=>s+r.impr,0);
+  const totSpend = data.reduce((s,r)=>s+r.spend,0);
+  const totClk   = data.reduce((s,r)=>s+r.clicks,0);
+  const cpcMed   = totClk>0 ? totSpend/totClk : 0;
+  const cpmMed   = totImpr>0 ? totSpend/totImpr*1000 : 0;
+  const ctrMed   = totImpr>0 ? totClk/totImpr*100 : 0;
+
+  document.getElementById('kpi-loca').innerHTML =
+    kpi('🗺️','Estados/Regiões',   data.length,    'Localizações','var(--accent)') +
+    kpi('👁️','Impressões Totais', fI(totImpr),    'Soma de todas','var(--accent2)') +
+    kpi('💰','Gasto Total',        fR(totSpend),   'Amount Spent','var(--green)') +
+    kpi('🖱️','Clicks Totais',      fI(totClk),     'Clicks (All)','var(--cyan)') +
+    kpi('💵','CPC Médio Geral',    fR(cpcMed),     'Custo por clique','var(--yellow)') +
+    kpi('📡','CPM Médio Geral',    fR(cpmMed),     'Custo por 1.000','var(--accent)') +
+    kpi('📊','CTR Geral',          fP(ctrMed),     'Clicks / Impressões','var(--green)',Math.min(ctrMed*10,100));
+
+  // Arrays separados para cada critério — cada um ordenado pelo SEU campo
+  const byImpr  = [...data].sort((a,b)=>b.impr -a.impr );
+  const bySpend = [...data].sort((a,b)=>b.spend-a.spend);
+  const byClk   = [...data].sort((a,b)=>b.clicks-a.clicks);
+
+  // Gráficos horizontais
+  mkChart('cLocSpend','bar',bySpend.map(r=>r.region),[{
+    label:'Gasto R$',data:bySpend.map(r=>+r.spend.toFixed(2)),
+    backgroundColor:bySpend.map((_,i)=>palC(i)),borderRadius:4
+  }],{indexAxis:'y'});
+
+  mkChart('cLocImpr','bar',byImpr.map(r=>r.region),[{
+    label:'Impressões',data:byImpr.map(r=>r.impr),
+    backgroundColor:'rgba(79,110,247,.75)',borderRadius:4
+  }],{indexAxis:'y'});
+
+  // Rankings com barras coloridas
+  rankBars('rankImpr',  byImpr.map(r=>({label:r.region, value:r.impr})),   fI);
+  rankBars('rankSpend', bySpend.map(r=>({label:r.region, value:r.spend})),  v=>'R$ '+fD(v));
+  rankBars('rankClicks',byClk.map(r=>({label:r.region, value:r.clicks})),  fI);
+
+  // Tabela ordenada por impressões desc
+  document.getElementById('tb3').innerHTML=byImpr.map(r=>{
+    const cpc=r.clicks>0?r.spend/r.clicks:0;
+    const cpm=r.impr>0?r.spend/r.impr*1000:0;
+    const ctr=r.impr>0?r.clicks/r.impr*100:0;
+    return `<tr>
+      <td><b>${r.region}</b></td>
+      <td>${fI(r.impr)}</td>
+      <td><span class="badge b-green">${fR(r.spend)}</span></td>
+      <td>${fI(r.clicks)}</td>
+      <td>${fR(cpc)}</td>
+      <td>${fR(cpm)}</td>
+      <td>${fP(ctr)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════ LOAD ALL ══════
+async function loadAll(){
+  const btn=document.querySelector('.btn');
+  btn.classList.add('loading');
+  document.getElementById('loading').classList.remove('hidden');
+  try{
+    const [r1,r2,r2i,r3]=await Promise.all([
+      fetch(csvUrl(GIDS.perf)).then(r=>r.text()),
+      fetch(csvUrl(GIDS.cria)).then(r=>r.text()),
+      fetch(csvUrl(GIDS.criaImg)).then(r=>r.text()),
+      fetch(csvUrl(GIDS.loca)).then(r=>r.text()),
+    ]);
+    renderPerf(parseCSV(r1));
+    renderCria(parseCSV(r2),parseCSV(r2i));
+    renderLoca(parseCSV(r3));
+    const now=new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+    document.getElementById('last-update').textContent='Atualizado: '+now;
+  }catch(e){
+    alert('Erro ao carregar:\n'+e.message);
+    console.error(e);
+  }finally{
+    btn.classList.remove('loading');
+    document.getElementById('loading').classList.add('hidden');
+  }
+}
+
+loadAll();
+setInterval(loadAll,30*60*1000);
+</script>
+</body>
+</html>
